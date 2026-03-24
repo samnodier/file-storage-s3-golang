@@ -51,6 +51,10 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusInternalServerError, "Error parsing media type", err)
 		return
 	}
+	if mediaType != "image/jpeg" && mediaType != "image/png" {
+		respondWithError(w, http.StatusBadRequest, "Unsupported file type", nil)
+		return
+	}
 	extensions, err := mime.ExtensionsByType(mediaType)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error getting extension", err)
