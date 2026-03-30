@@ -38,6 +38,8 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	fmt.Println("uploading video", videoID, "by user", userID)
+
 	videoMetadata, err := cfg.db.GetVideo(videoID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "You are not the owner of the video", err)
@@ -84,6 +86,12 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	// Reset the temp file's read pointer to the beginning
 	tempFile.Seek(0, io.SeekStart)
 
+	videoAspectRation, err := getVideoAspectRatio(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error getting the video aspect ratio", err)
+		return
+	}
+
 	extensions, err := mime.ExtensionsByType(mediaType)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error getting extension", err)
@@ -98,9 +106,19 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	_, err = rand.Read(b)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create the filename bytes", err)
+		return
 	}
 	randomName := base64.RawURLEncoding.EncodeToString(b)
-	fileName := fmt.Sprintf("%s%s", randomName, ext)
+	var folder string
+	switch videoAspectRation {
+	case "16:9":
+		folder = "landscape"
+	case "9:16":
+		folder = "portrait"
+	default:
+		folder = "other"
+	}
+	fileName := fmt.Sprintf("%s/%s%s", folder, randomName, ext)
 
 	// 9.
 	_, err = cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
