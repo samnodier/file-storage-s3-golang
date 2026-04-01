@@ -105,7 +105,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "Invalid video type", nil)
 		return
 	}
-	ext := extensions[0]
+	ext := ".mp4"
 	b := make([]byte, 32)
 	_, err = rand.Read(b)
 	if err != nil {
@@ -147,7 +147,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, "Error uploading file to S3", err)
 		return
 	}
-	videoURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", cfg.s3Bucket, cfg.s3Region, fileName)
+	videoURL := fmt.Sprintf("https://%s/%s", cfg.s3CfDistribution, fileName)
 	videoMetadata.VideoURL = &videoURL
 	err = cfg.db.UpdateVideo(videoMetadata)
 	if err != nil {
